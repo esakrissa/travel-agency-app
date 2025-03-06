@@ -8,7 +8,7 @@ env:
   PROJECT_ID: travel-agency-448103
   REGION: us-central1
   SERVICE_NAME: travel-agency-service
-  REPOSITORY: travel-agency-repo
+  REPOSITORY: cloud-run-source-deploy
 
 jobs:
   deploy:
@@ -44,15 +44,6 @@ jobs:
           gcloud auth list
           echo "📋 Current project settings:"
           gcloud config list project
-
-      - name: Create Artifact Registry Repository
-        run: |
-          echo "🏗️ Creating/Verifying Artifact Registry repository..."
-          gcloud artifacts repositories create ${{ env.REPOSITORY }} \
-            --repository-format=docker \
-            --location=${{ env.REGION }} \
-            --description="Travel Agency Docker repository" \
-            || echo "Repository may already exist, continuing..."
 
       - name: Configure Docker for Artifact Registry
         run: |
