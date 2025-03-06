@@ -27,9 +27,13 @@ jobs:
       - name: Deploy to VM
         run: |
           rsync -avz --exclude 'node_modules' --exclude '.git' ./ esakrissa@34.57.0.40:~/travel-agency-app/
-          ssh esakrissa@34.57.0.40 "cd ~/travel-agency-app && npm install && \
+          ssh esakrissa@34.57.0.40 "cd ~/travel-agency-app && \
+          npm install && \
           sudo npm install pm2 -g && \
-          pm2 list | grep -q 'travel-agency-app' && pm2 stop travel-agency-app && pm2 delete travel-agency-app || echo 'No existing PM2 process found' && \
+          pm2 stop travel-agency-app || true && \
+          pm2 delete travel-agency-app || true && \
+          sudo pkill -f 'node index.js' || true && \
+          sleep 2 && \
           pm2 start ecosystem.config.js && \
           pm2 save && \
           sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u esakrissa --hp /home/esakrissa || echo 'PM2 startup already configured'"
