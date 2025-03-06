@@ -8,7 +8,7 @@ env:
   PROJECT_ID: travel-agency-448103
   REGION: us-central1
   SERVICE_NAME: travel-agency-service
-  REPOSITORY: travel-agency-service
+  REPOSITORY: travel-agency-repo
 
 jobs:
   deploy:
@@ -29,6 +29,11 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: 'google-github-actions/setup-gcloud@v1'
+
+      - name: Enable Required APIs
+        run: |
+          echo "🔧 Enabling required APIs..."
+          gcloud services enable artifactregistry.googleapis.com cloudrun.googleapis.com
 
       - name: Create Artifact Registry Repository
         run: |
