@@ -1,6 +1,72 @@
-# Travel Agency Cloud Run Application
+# Travel Agency Application
 
-This is a simple Node.js application deployed on Google Cloud Run.
+A simple travel agency application built with Node.js and Express, designed to be deployed on Google Cloud Run.
+
+## Development Workflow
+
+This project follows a GitHub-based workflow for development, testing, and deployment:
+
+1. **Local Development**: Edit code locally using your preferred editor (e.g., Cursor)
+2. **Testing on VM**: Deploy to the development VM for testing
+3. **Production Deployment**: Deploy to Cloud Run for production
+
+### Branches
+
+- `main`: Production branch, automatically deploys to Cloud Run
+- `dev`: Development branch, automatically deploys to the testing VM
+
+## Local Development
+
+To run the application locally:
+
+```bash
+./dev.sh run
+```
+
+## Deployment
+
+### Deploy to VM for Testing
+
+To manually deploy to the VM for testing:
+
+```bash
+./dev.sh deploy-vm
+```
+
+Alternatively, push your changes to the `dev` branch, and GitHub Actions will automatically deploy to the VM:
+
+```bash
+git checkout dev
+git add .
+git commit -m "Your commit message"
+git push
+```
+
+### Deploy to Production
+
+To deploy to production, merge your changes to the `main` branch, and GitHub Actions will automatically deploy to Cloud Run:
+
+```bash
+git checkout main
+git merge dev
+git push
+```
+
+## Application Structure
+
+- `index.js`: Main application file
+- `package.json`: Node.js dependencies
+- `Dockerfile`: Container configuration for Cloud Run
+- `.dockerignore`: Files to exclude from the container
+- `.github/workflows/`: GitHub Actions workflow files
+
+## Environment Variables
+
+- `PORT`: The port on which the application will listen (default: 8080)
+
+## License
+
+This project is licensed under the MIT License.
 
 ## Development Environment
 

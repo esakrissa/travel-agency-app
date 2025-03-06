@@ -1,0 +1,26 @@
+name: Deploy to VM for Testing
+
+on:
+  push:
+    branches: [ dev ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          
+      - name: Add VM to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H 34.57.0.40 >> ~/.ssh/known_hosts
+          
+      - name: Deploy to VM
+        run: |
+          rsync -avz --exclude 'node_modules' --exclude '.git' ./ esakrissa@34.57.0.40:~/travel-agency-app/
+          ssh esakrissa@34.57.0.40 "cd ~/travel-agency-app && npm install && pkill -f 'node index.js' || true && nohup node index.js > app.log 2>&1 &" 
