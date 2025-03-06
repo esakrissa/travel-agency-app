@@ -1,19 +1,25 @@
-name: Deploy to Cloud Run for Production
+name: Deploy to Cloud Run
 
 on:
   push:
     branches: [ main ]
 
+env:
+  PROJECT_ID: travel-agency-448103
+  REGION: us-central1
+  SERVICE_NAME: travel-agency-service
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     permissions:
       contents: 'read'
       id-token: 'write'
 
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Google Auth
         id: auth
         uses: 'google-github-actions/auth@v1'
@@ -22,32 +28,31 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: 'google-github-actions/setup-gcloud@v1'
-        with:
-          project_id: travel-agency-448103
-          install_components: 'gke-gcloud-auth-plugin'
-      
+
       - name: Configure Docker for Artifact Registry
         run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
-          
-      - name: Create Artifact Registry repository
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Build and Push Container
         run: |
-          gcloud artifacts repositories create travel-agency-repo \
-            --repository-format=docker \
-            --location=us-central1 \
-            --description="Travel Agency Docker repository" \
-            --quiet || true
-      
-      - name: Build and push Docker image
-        run: |
-          docker build -t us-central1-docker.pkg.dev/travel-agency-448103/travel-agency-repo/travel-agency-app:${{ github.sha }} .
-          docker push us-central1-docker.pkg.dev/travel-agency-448103/travel-agency-repo/travel-agency-app:${{ github.sha }}
-      
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}/app:${{ github.sha }} \
+            --build-arg NODE_ENV=production .
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}/app:${{ github.sha }}
+
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy travel-agency-app \
-            --image us-central1-docker.pkg.dev/travel-agency-448103/travel-agency-repo/travel-agency-app:${{ github.sha }} \
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}/app:${{ github.sha }} \
+            --region ${{ env.REGION }} \
             --platform managed \
-            --region us-central1 \
             --allow-unauthenticated \
-            --set-env-vars NODE_ENV=production 
+            --port 8080 \
+            --memory 256Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 1 \
+            --set-env-vars NODE_ENV=production
+
+      - name: Show Service URL
+        run: |
+          echo "Service URL: $(gcloud run services describe ${{ env.SERVICE_NAME }} --region ${{ env.REGION }} --format 'value(status.url)')" 
