@@ -6,13 +6,19 @@ WORKDIR /app
 # Install dependencies
 COPY package*.json ./
 
-RUN npm install --production
+# Build argument for environment
+ARG NODE_ENV=production
+ENV NODE_ENV=$NODE_ENV
+
+# Install dependencies (including devDependencies in development)
+RUN if [ "$NODE_ENV" = "production" ]; then \
+        npm install --production; \
+    else \
+        npm install; \
+    fi
 
 # Copy application files
 COPY . ./
-
-# Set production environment
-ENV NODE_ENV=production
 
 EXPOSE 8080
 

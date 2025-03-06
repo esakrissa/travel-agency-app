@@ -1,0 +1,74 @@
+name: Deploy Docker to VM for Development
+
+on:
+  push:
+    branches: [ dev ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          
+      - name: Add VM to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H 34.57.0.40 >> ~/.ssh/known_hosts
+
+      - name: Transfer Docker files
+        run: |
+          # Create a temporary deployment directory
+          ssh esakrissa@34.57.0.40 "mkdir -p ~/travel-agency-app"
+          
+          # Transfer necessary files
+          rsync -avz --exclude 'node_modules' --exclude '.git' ./ esakrissa@34.57.0.40:~/travel-agency-app/
+
+      - name: Deploy with Docker
+        run: |
+          ssh esakrissa@34.57.0.40 "bash -s" << 'ENDSSH'
+          cd ~/travel-agency-app
+
+          # Install Docker if not installed
+          if ! command -v docker &> /dev/null; then
+            echo "🔧 Installing Docker..."
+            curl -fsSL https://get.docker.com -o get-docker.sh
+            sudo sh get-docker.sh
+            sudo usermod -aG docker $USER
+          fi
+
+          # Stop and remove existing container if it exists
+          echo "🧹 Cleaning up existing container..."
+          docker stop travel-agency-dev || true
+          docker rm travel-agency-dev || true
+
+          # Build new image with development environment
+          echo "🏗️ Building Docker image..."
+          docker build -t travel-agency-dev \
+            --build-arg NODE_ENV=development \
+            .
+
+          # Run new container
+          echo "🚀 Starting container..."
+          docker run -d \
+            --name travel-agency-dev \
+            -p 8080:8080 \
+            -e NODE_ENV=development \
+            --restart unless-stopped \
+            travel-agency-dev
+
+          echo "✅ Deployment completed"
+          ENDSSH
+
+      - name: Verify deployment
+        run: |
+          echo "⏳ Waiting for application to start..."
+          sleep 10
+          echo "🏥 Checking application health..."
+          curl -v http://34.57.0.40:8080/health || echo "Health check failed, but continuing..."
+          echo "📊 Checking Docker container status..."
+          ssh esakrissa@34.57.0.40 "docker ps | grep travel-agency-dev" 
