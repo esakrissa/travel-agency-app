@@ -8,8 +8,33 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       
+      - name: Set up Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          project_id: travel-agency-448103
+          install_components: 'gke-gcloud-auth-plugin'
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+          
+      - name: Create Artifact Registry repository
+        run: |
+          gcloud artifacts repositories create travel-agency-repo \
+            --repository-format=docker \
+            --location=us-central1 \
+            --description="Travel Agency Docker repository" \
+            --quiet || true
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t us-central1-docker.pkg.dev/travel-agency-448103/travel-agency-repo/travel-agency-dev:${{ github.sha }} \
+            --build-arg NODE_ENV=development \
+            .
+          docker push us-central1-docker.pkg.dev/travel-agency-448103/travel-agency-repo/travel-agency-dev:${{ github.sha }}
+
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.5.4
         with:
@@ -20,46 +45,35 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H 34.57.0.40 >> ~/.ssh/known_hosts
 
-      - name: Transfer Docker files
+      - name: Deploy to VM with Docker
         run: |
-          # Create a temporary deployment directory
-          ssh esakrissa@34.57.0.40 "mkdir -p ~/travel-agency-app"
-          
-          # Transfer necessary files
-          rsync -avz --exclude 'node_modules' --exclude '.git' ./ esakrissa@34.57.0.40:~/travel-agency-app/
-
-      - name: Deploy with Docker
-        run: |
-          ssh esakrissa@34.57.0.40 "bash -s" << 'ENDSSH'
-          cd ~/travel-agency-app
-
+          ssh esakrissa@34.57.0.40 "sudo bash -s" << 'ENDSSH'
           # Install Docker if not installed
           if ! command -v docker &> /dev/null; then
             echo "🔧 Installing Docker..."
             curl -fsSL https://get.docker.com -o get-docker.sh
-            sudo sh get-docker.sh
-            sudo usermod -aG docker $USER
+            sh get-docker.sh
           fi
+
+          # Configure Docker for Artifact Registry
+          echo "🔑 Configuring Docker authentication..."
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet || true
 
           # Stop and remove existing container if it exists
           echo "🧹 Cleaning up existing container..."
           docker stop travel-agency-dev || true
           docker rm travel-agency-dev || true
 
-          # Build new image with development environment
-          echo "🏗️ Building Docker image..."
-          docker build -t travel-agency-dev \
-            --build-arg NODE_ENV=development \
-            .
-
-          # Run new container
-          echo "🚀 Starting container..."
+          # Pull and run new container
+          echo "🚀 Pulling and starting container..."
+          docker pull us-central1-docker.pkg.dev/travel-agency-448103/travel-agency-repo/travel-agency-dev:${GITHUB_SHA}
+          
           docker run -d \
             --name travel-agency-dev \
             -p 8080:8080 \
             -e NODE_ENV=development \
             --restart unless-stopped \
-            travel-agency-dev
+            us-central1-docker.pkg.dev/travel-agency-448103/travel-agency-repo/travel-agency-dev:${GITHUB_SHA}
 
           echo "✅ Deployment completed"
           ENDSSH
@@ -71,4 +85,4 @@ jobs:
           echo "🏥 Checking application health..."
           curl -v http://34.57.0.40:8080/health || echo "Health check failed, but continuing..."
           echo "📊 Checking Docker container status..."
-          ssh esakrissa@34.57.0.40 "docker ps | grep travel-agency-dev" 
+          ssh esakrissa@34.57.0.40 "sudo docker ps | grep travel-agency-dev" 
