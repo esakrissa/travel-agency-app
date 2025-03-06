@@ -3,8 +3,12 @@
 
 echo "Checking application status on VM..."
 
+# Check PM2 status
+echo "PM2 status:"
+ssh esakrissa@34.57.0.40 "pm2 status || echo 'PM2 not installed or not running'"
+
 # Check if the process is running
-echo "Process status:"
+echo -e "\nProcess status:"
 ssh esakrissa@34.57.0.40 "ps aux | grep 'node index.js' | grep -v grep || echo 'Process not found'"
 
 # Check if the port is listening

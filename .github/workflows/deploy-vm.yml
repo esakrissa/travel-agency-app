@@ -27,11 +27,17 @@ jobs:
       - name: Deploy to VM
         run: |
           rsync -avz --exclude 'node_modules' --exclude '.git' ./ esakrissa@34.57.0.40:~/travel-agency-app/
-          ssh esakrissa@34.57.0.40 "cd ~/travel-agency-app && npm install && pkill -f 'node index.js' || true && nohup node index.js > app.log 2>&1 &"
+          ssh esakrissa@34.57.0.40 "cd ~/travel-agency-app && npm install && \
+          sudo npm install pm2 -g && \
+          pm2 stop travel-agency-app || true && \
+          pm2 delete travel-agency-app || true && \
+          pm2 start ecosystem.config.js && \
+          pm2 save && \
+          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u esakrissa --hp /home/esakrissa || true"
       
       - name: Verify deployment
         run: |
           echo "Waiting for application to start..."
           sleep 5
           curl -s http://34.57.0.40:8080/health || echo "Health check failed, but continuing..."
-          ssh esakrissa@34.57.0.40 "cat ~/travel-agency-app/app.log | tail -n 20" 
+          ssh esakrissa@34.57.0.40 "pm2 status && cat ~/travel-agency-app/app.log | tail -n 20" 
