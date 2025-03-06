@@ -19,8 +19,19 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H 34.57.0.40 >> ~/.ssh/known_hosts
+      
+      - name: Configure VM firewall
+        run: |
+          ssh esakrissa@34.57.0.40 "sudo ufw allow 8080/tcp || true"
           
       - name: Deploy to VM
         run: |
           rsync -avz --exclude 'node_modules' --exclude '.git' ./ esakrissa@34.57.0.40:~/travel-agency-app/
-          ssh esakrissa@34.57.0.40 "cd ~/travel-agency-app && npm install && pkill -f 'node index.js' || true && nohup node index.js > app.log 2>&1 &" 
+          ssh esakrissa@34.57.0.40 "cd ~/travel-agency-app && npm install && pkill -f 'node index.js' || true && nohup node index.js > app.log 2>&1 &"
+      
+      - name: Verify deployment
+        run: |
+          echo "Waiting for application to start..."
+          sleep 5
+          curl -s http://34.57.0.40:8080/health || echo "Health check failed, but continuing..."
+          ssh esakrissa@34.57.0.40 "cat ~/travel-agency-app/app.log | tail -n 20" 

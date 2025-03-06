@@ -2,6 +2,11 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 8080;
 
+// Add a simple health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.get('/', (req, res) => {
   res.send(`
     <html>
@@ -55,6 +60,8 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Travel Agency app listening on port ${port}`);
+  console.log(`Server running at http://0.0.0.0:${port}/`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 }); 
