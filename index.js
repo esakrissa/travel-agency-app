@@ -31,15 +31,23 @@ app.get('/', (req, res) => {
             margin-top: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
           }
+          .footer {
+            margin-top: 20px;
+            font-size: 0.8em;
+            color: #777;
+          }
         </style>
       </head>
       <body>
         <div class="container">
           <h1>Welcome to Travel Agency</h1>
           <div class="info">
-            <p>This is a simple Cloud Run application running in production.</p>
+            <p>This is a simple Cloud Run application running in development.</p>
             <p>Server time: ${new Date().toLocaleString()}</p>
-            <p>Environment: Production</p>
+            <p>Environment: Development</p>
+          </div>
+          <div class="footer">
+            <p>© 2025 Travel Agency - Deployed via GitHub Actions</p>
           </div>
         </div>
       </body>
