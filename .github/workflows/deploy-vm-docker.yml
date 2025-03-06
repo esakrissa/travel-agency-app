@@ -26,27 +26,24 @@ jobs:
           project_id: travel-agency-448103
           install_components: 'gke-gcloud-auth-plugin'
 
-      - name: Enable required APIs
+      - name: Configure Docker for Artifact Registry
         run: |
-          gcloud services enable artifactregistry.googleapis.com
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
-      - name: Create Artifact Registry repository
+      - name: Create or verify Artifact Registry repository
         run: |
-          echo "Creating/Verifying Artifact Registry repository..."
+          echo "Checking Artifact Registry repository..."
           if ! gcloud artifacts repositories describe travel-agency-repo \
             --location=us-central1 > /dev/null 2>&1; then
             echo "Repository does not exist. Creating..."
             gcloud artifacts repositories create travel-agency-repo \
               --repository-format=docker \
               --location=us-central1 \
-              --description="Travel Agency Docker repository"
+              --description="Travel Agency Docker repository" \
+              --quiet || echo "Failed to create repository, it might already exist or need manual creation"
           else
             echo "Repository already exists."
           fi
-
-      - name: Configure Docker for Artifact Registry
-        run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
       - name: Build and push Docker image
         run: |
