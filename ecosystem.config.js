@@ -12,6 +12,8 @@ module.exports = {
     listen_timeout: 3000,
     restart_delay: 1000,
     max_restarts: 10,
+    min_uptime: "30s",
+    exp_backoff_restart_delay: 100,
     env: {
       NODE_ENV: "development",
       PORT: 8080
@@ -24,6 +26,7 @@ module.exports = {
     out_file: "app.log",
     error_file: "app-error.log",
     merge_logs: true,
-    time: true
+    time: true,
+    ignore_watch: ["node_modules", "app.log", "app-error.log"]
   }]
 }; 

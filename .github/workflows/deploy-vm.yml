@@ -33,15 +33,15 @@ jobs:
           echo '🚀 Installing PM2...' && \
           sudo npm install pm2 -g && \
           echo '🧹 Cleaning up old processes...' && \
-          (pm2 list | grep -q 'travel-agency-app' && pm2 delete travel-agency-app || echo 'No existing PM2 process found') && \
-          (sudo pkill -f 'node index.js' || echo 'No existing Node.js processes found') && \
+          pm2 describe travel-agency-app > /dev/null 2>&1 && pm2 delete travel-agency-app || echo 'No existing PM2 process found' && \
+          pgrep -f 'node index.js' > /dev/null 2>&1 && sudo pkill -f 'node index.js' || echo 'No existing Node.js processes found' && \
           sleep 2 && \
           echo '🌟 Starting application with PM2...' && \
           pm2 start ecosystem.config.js && \
           echo '💾 Saving PM2 configuration...' && \
           pm2 save --force && \
           echo '🔄 Configuring PM2 startup...' && \
-          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u esakrissa --hp /home/esakrissa || echo 'PM2 startup already configured' && \
+          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u esakrissa --hp /home/esakrissa > /dev/null 2>&1 || echo 'PM2 startup already configured' && \
           echo '✅ Deployment completed successfully'"
       
       - name: Verify deployment
@@ -51,4 +51,4 @@ jobs:
           echo "🏥 Checking application health..."
           curl -v http://34.57.0.40:8080/health || echo "Health check failed, but continuing..."
           echo "📊 Checking PM2 status..."
-          ssh esakrissa@34.57.0.40 "pm2 list && echo '📝 Application logs:' && tail -n 20 ~/travel-agency-app/app.log" 
+          ssh esakrissa@34.57.0.40 "pm2 list && echo '📝 Recent application logs:' && tail -n 20 ~/travel-agency-app/app.log" 
