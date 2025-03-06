@@ -13,6 +13,12 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    
+    # Note: Service account needs these roles:
+    # - Artifact Registry Administrator (roles/artifactregistry.admin)
+    # - Cloud Run Admin (roles/run.admin)
+    # - Storage Admin (roles/storage.admin)
+    # - Service Account Token Creator (roles/iam.serviceAccountTokenCreator)
 
     permissions:
       contents: 'read'
@@ -21,39 +27,27 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: auth
-        name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+      - name: Google Auth
+        id: auth
+        uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
-          token_format: 'access_token'
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+        uses: 'google-github-actions/setup-gcloud@v1'
         with:
           project_id: ${{ env.PROJECT_ID }}
-          install_components: 'gke-gcloud-auth-plugin'
 
-      - name: Verify Authentication and Project
+      - name: Verify Authentication
         run: |
           echo "🔍 Verifying authentication..."
           gcloud auth list
           echo "📋 Current project settings:"
           gcloud config list project
-          echo "🏢 Project info:"
-          gcloud projects describe ${{ env.PROJECT_ID }}
 
       - name: Create Artifact Registry Repository
         run: |
           echo "🏗️ Creating/Verifying Artifact Registry repository..."
-          # First check if Artifact Registry API is enabled
-          if ! gcloud services list --enabled | grep -q artifactregistry.googleapis.com; then
-            echo "⚠️ Artifact Registry API not enabled. Please enable it in the Google Cloud Console:"
-            echo "https://console.cloud.google.com/apis/library/artifactregistry.googleapis.com?project=${{ env.PROJECT_ID }}"
-            exit 1
-          fi
-          
-          # Try to create repository
           gcloud artifacts repositories create ${{ env.REPOSITORY }} \
             --repository-format=docker \
             --location=${{ env.REGION }} \
@@ -77,13 +71,6 @@ jobs:
       - name: Deploy to Cloud Run
         run: |
           echo "🚀 Deploying to Cloud Run..."
-          # Check if Cloud Run API is enabled
-          if ! gcloud services list --enabled | grep -q run.googleapis.com; then
-            echo "⚠️ Cloud Run API not enabled. Please enable it in the Google Cloud Console:"
-            echo "https://console.cloud.google.com/apis/library/run.googleapis.com?project=${{ env.PROJECT_ID }}"
-            exit 1
-          fi
-
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/app:${{ github.sha }} \
             --region ${{ env.REGION }} \
