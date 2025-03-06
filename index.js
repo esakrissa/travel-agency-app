@@ -8,51 +8,107 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/', (req, res) => {
+  const deploymentTime = new Date().toLocaleString();
   res.send(`
     <html>
       <head>
-        <title>Travel Agency</title>
+        <title>Travel Agency - Updated Version</title>
         <style>
           body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            background-color: #f8f9fa;
             color: #333;
+            line-height: 1.6;
           }
           .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 40px 20px;
             text-align: center;
           }
+          header {
+            margin-bottom: 40px;
+          }
           h1 {
-            color: #2c3e50;
+            color: #0066cc;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+          }
+          .tagline {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 30px;
+          }
+          .card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
           }
           .info {
-            background-color: #fff;
-            border-radius: 5px;
-            padding: 20px;
-            margin-top: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin: 30px 0;
+          }
+          .info-item {
+            background-color: #e9f7fe;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            margin: 10px;
+            flex: 1;
+            min-width: 200px;
+            border-radius: 4px;
+            text-align: left;
           }
           .footer {
-            margin-top: 20px;
-            font-size: 0.8em;
+            margin-top: 40px;
+            font-size: 0.9em;
             color: #777;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+          }
+          .highlight {
+            background-color: #ffffcc;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-weight: bold;
           }
         </style>
       </head>
       <body>
         <div class="container">
-          <h1>Welcome to Travel Agency</h1>
-          <div class="info">
-            <p>This is a simple Cloud Run application running in development.</p>
-            <p>Server time: ${new Date().toLocaleString()}</p>
-            <p>Environment: Development</p>
+          <header>
+            <h1>Welcome to Travel Agency</h1>
+            <p class="tagline">Your journey begins with us</p>
+          </header>
+          
+          <div class="card">
+            <h2>Automatic Deployment Demo</h2>
+            <p>This page demonstrates automatic deployment via GitHub Actions to a GCP VM instance.</p>
+            <p class="highlight">This is the updated version of the application!</p>
           </div>
+          
+          <div class="info">
+            <div class="info-item">
+              <h3>Server Info</h3>
+              <p>Server time: ${new Date().toLocaleString()}</p>
+              <p>Environment: Development</p>
+              <p>Deployment: ${deploymentTime}</p>
+            </div>
+            <div class="info-item">
+              <h3>Tech Stack</h3>
+              <p>Node.js + Express</p>
+              <p>PM2 Process Manager</p>
+              <p>GitHub Actions CI/CD</p>
+            </div>
+          </div>
+          
           <div class="footer">
-            <p>© 2025 Travel Agency - Deployed via GitHub Actions</p>
+            <p>© 2025 Travel Agency - Deployed via GitHub Actions to GCP VM</p>
           </div>
         </div>
       </body>

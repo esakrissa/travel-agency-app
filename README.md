@@ -59,6 +59,27 @@ git push
 - `Dockerfile`: Container configuration for Cloud Run
 - `.dockerignore`: Files to exclude from the container
 - `.github/workflows/`: GitHub Actions workflow files
+- `ecosystem.config.js`: PM2 configuration for process management
+
+## Process Management with PM2
+
+The application on the development VM is managed using PM2, which provides:
+
+- Automatic application restart on crashes
+- Startup on system reboot
+- Process monitoring and logs
+
+To check the status of the application on the VM:
+
+```bash
+./check-status.sh
+```
+
+Or SSH into the VM and run:
+
+```bash
+pm2 status
+```
 
 ## Environment Variables
 
