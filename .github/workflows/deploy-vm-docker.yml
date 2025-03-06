@@ -20,15 +20,43 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H 34.57.0.40 >> ~/.ssh/known_hosts
 
+      - name: Pre-deployment cleanup
+        run: |
+          echo "🧹 Performing pre-deployment cleanup..."
+          ssh esakrissa@34.57.0.40 "sudo bash -s" << 'ENDSSH'
+          # Kill any Node.js processes
+          echo "Stopping Node.js processes..."
+          sudo killall -9 node || true
+          
+          # Remove existing Docker containers
+          echo "Removing Docker containers..."
+          sudo docker rm -f travel-agency-dev || true
+          
+          # Free up port 8080 if needed
+          echo "Freeing port 8080..."
+          sudo fuser -k 8080/tcp || true
+          sleep 2
+          
+          # Verify port is free
+          if sudo lsof -i :8080; then
+            echo "⚠️ Warning: Port 8080 is still in use"
+            exit 1
+          else
+            echo "✅ Port 8080 is free"
+          fi
+          ENDSSH
+
       - name: Transfer files to VM
         run: |
           # Create deployment directory with sudo
           ssh esakrissa@34.57.0.40 "sudo mkdir -p /app/travel-agency && sudo chown -R esakrissa:esakrissa /app/travel-agency"
           
           # Transfer files including Dockerfile
+          echo "📦 Transferring application files..."
           rsync -avz --exclude 'node_modules' --exclude '.git' ./ esakrissa@34.57.0.40:/app/travel-agency/
           
           # Verify files were transferred
+          echo "✅ Verifying transferred files..."
           ssh esakrissa@34.57.0.40 "ls -la /app/travel-agency"
 
       - name: Deploy to VM with Docker
@@ -42,11 +70,6 @@ jobs:
             curl -fsSL https://get.docker.com -o get-docker.sh
             sh get-docker.sh
           fi
-
-          # Stop and remove existing container if it exists
-          echo "🧹 Cleaning up existing container..."
-          sudo docker stop travel-agency-dev 2>/dev/null || true
-          sudo docker rm travel-agency-dev 2>/dev/null || true
 
           # Build and run new container
           echo "🏗️ Building Docker image..."
@@ -68,7 +91,8 @@ jobs:
             --restart unless-stopped \
             travel-agency-dev || exit 1
 
-          echo "✅ Deployment completed successfully"
+          echo "✨ Container started successfully!"
+          sudo docker ps | grep travel-agency-dev
           ENDSSH
 
       - name: Verify deployment
@@ -82,5 +106,8 @@ jobs:
           echo "📊 Checking Docker container status..."
           ssh esakrissa@34.57.0.40 "sudo docker ps -a | grep travel-agency-dev" || echo "Container status check failed"
           
-          echo "📝 Checking Docker logs..."
-          ssh esakrissa@34.57.0.40 "sudo docker logs travel-agency-dev --tail 50" || echo "Log retrieval failed" 
+          echo "📝 Checking container logs..."
+          ssh esakrissa@34.57.0.40 "echo '=== Last 50 container logs ===' && sudo docker logs travel-agency-dev --tail 50" || echo "Log retrieval failed"
+          
+          echo "🔍 Checking container details..."
+          ssh esakrissa@34.57.0.40 "echo '=== Container Details ===' && sudo docker inspect travel-agency-dev --format '{{.State.Status}} - {{.State.Health.Status}}'" || echo "Container inspection failed" 
