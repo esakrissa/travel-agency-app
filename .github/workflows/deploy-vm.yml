@@ -40,29 +40,29 @@ jobs:
           sudo npm install pm2 -g
 
           echo '🧹 Cleaning up old processes...'
-          if pm2 describe travel-agency-app > /dev/null 2>&1; then
-            pm2 delete travel-agency-app
-          else
-            echo 'No existing PM2 process found'
-          fi
+          # Complete PM2 reset if needed
+          pm2 kill || true
+          rm -rf ~/.pm2 || true
+          mkdir -p ~/.pm2
 
-          if pgrep -f 'node index.js' > /dev/null 2>&1; then
-            sudo pkill -f 'node index.js'
-            echo 'Killed existing Node.js processes'
-          else
-            echo 'No existing Node.js processes found'
-          fi
-
+          # Kill any stray node processes
+          pkill -f "node index.js" || true
+          
           sleep 2
 
           echo '🌟 Starting application with PM2...'
-          pm2 start ecosystem.config.js
+          # Start with more verbose output
+          PM2_SILENT=false pm2 start ecosystem.config.js || {
+            echo "Failed to start with PM2. Checking logs..."
+            cat ~/.pm2/pm2.log || true
+            exit 1
+          }
 
           echo '💾 Saving PM2 configuration...'
-          pm2 save --force
+          pm2 save --force || true
 
           echo '🔄 Configuring PM2 startup...'
-          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u esakrissa --hp /home/esakrissa > /dev/null 2>&1 || true
+          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u esakrissa --hp /home/esakrissa || true
 
           echo '✅ Deployment completed successfully'
           ENDSSH
@@ -70,7 +70,7 @@ jobs:
       - name: Verify deployment
         run: |
           echo "⏳ Waiting for application to start..."
-          sleep 5
+          sleep 10
           echo "🏥 Checking application health..."
           curl -v http://34.57.0.40:8080/health || echo "Health check failed, but continuing..."
           echo "📊 Checking PM2 status..."

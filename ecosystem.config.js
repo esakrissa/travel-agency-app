@@ -6,14 +6,14 @@ module.exports = {
     exec_mode: "fork",
     autorestart: true,
     watch: false,
-    max_memory_restart: "200M",
-    kill_timeout: 3000,
+    max_memory_restart: "300M",
+    kill_timeout: 5000,
     wait_ready: true,
-    listen_timeout: 3000,
-    restart_delay: 1000,
-    max_restarts: 10,
+    listen_timeout: 5000,
+    restart_delay: 3000,
+    max_restarts: 5,
     min_uptime: "30s",
-    exp_backoff_restart_delay: 100,
+    exp_backoff_restart_delay: 1000,
     force: true,
     env: {
       NODE_ENV: "development",
@@ -28,8 +28,8 @@ module.exports = {
     error_file: "app-error.log",
     merge_logs: true,
     time: true,
-    ignore_watch: ["node_modules", "app.log", "app-error.log"],
+    ignore_watch: ["node_modules", "*.log"],
     stop_exit_codes: [0],
-    exp_backoff_restart_delay: 100
+    node_args: "--max-old-space-size=300"
   }]
 }; 
