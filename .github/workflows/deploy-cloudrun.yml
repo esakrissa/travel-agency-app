@@ -17,16 +17,26 @@ jobs:
           service_account_key: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
       
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker us-central1-docker.pkg.dev
+          
+      - name: Create Artifact Registry repository
+        run: |
+          gcloud artifacts repositories create travel-agency-repo \
+            --repository-format=docker \
+            --location=us-central1 \
+            --description="Travel Agency Docker repository" || true
+      
       - name: Build and push Docker image
         run: |
-          gcloud auth configure-docker
-          docker build -t gcr.io/travel-agency-448103/travel-agency-app:${{ github.sha }} .
-          docker push gcr.io/travel-agency-448103/travel-agency-app:${{ github.sha }}
+          docker build -t us-central1-docker.pkg.dev/travel-agency-448103/travel-agency-repo/travel-agency-app:${{ github.sha }} .
+          docker push us-central1-docker.pkg.dev/travel-agency-448103/travel-agency-repo/travel-agency-app:${{ github.sha }}
       
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy travel-agency-app \
-            --image gcr.io/travel-agency-448103/travel-agency-app:${{ github.sha }} \
+            --image us-central1-docker.pkg.dev/travel-agency-448103/travel-agency-repo/travel-agency-app:${{ github.sha }} \
             --platform managed \
             --region us-central1 \
             --allow-unauthenticated \
