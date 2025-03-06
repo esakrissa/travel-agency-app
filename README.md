@@ -1,126 +1,115 @@
 # Travel Agency Application
 
-A simple travel agency application built with Node.js and Express, designed to be deployed on Google Cloud Run.
+A modern travel planning platform built with Node.js and Docker.
 
-## Development Workflow
+## Environments
 
-This project follows a GitHub-based workflow for development, testing, and deployment:
+### Production
+- **URL**: https://travel-agency-service-957176400089.us-central1.run.app
+- **Platform**: Google Cloud Run
+- **Status**: Live 🚀
+- **Region**: us-central1
 
-1. **Local Development**: Edit code locally using your preferred editor (e.g., Cursor)
-2. **Testing on VM**: Deploy to the development VM for testing
-3. **Production Deployment**: Deploy to Cloud Run for production
+### Development
+- **Platform**: Docker on VM
+- **Environment**: Development
+- **Access**: Internal development environment (VPN required)
+- **Region**: us-central1
+- **Note**: Development server access is restricted to authorized team members only
 
-### Branches
+## Features
+- Modern, centered UI design
+- Real-time server status
+- Docker containerization
+- Health check endpoints
+- Environment-specific configurations
 
-- `main`: Production branch, automatically deploys to Cloud Run
-- `dev`: Development branch, automatically deploys to the testing VM
+## Tech Stack
+- Node.js
+- Express
+- Docker
+- GitHub Actions
+- Google Cloud Platform
+  - Cloud Run
+  - Artifact Registry
+  - Compute Engine (Development)
+  - VPC Network
 
-## Local Development
-
-To run the application locally:
-
-```bash
-./dev.sh run
-```
+## Security Measures
+- Production environment:
+  - HTTPS enforced
+  - Cloud Run's built-in security features
+  - Automated deployments via GitHub Actions
+- Development environment:
+  - Access restricted to authorized IPs
+  - VPN required for development access
+  - Docker containerization for isolation
+  - Regular security updates
+- General security:
+  - No public IP addresses in codebase
+  - Secrets managed through GitHub Secrets
+  - IAM role-based access control
+  - Regular security audits
 
 ## Deployment
 
-### Deploy to VM for Testing
-
-To manually deploy to the VM for testing:
-
-```bash
-./dev.sh deploy-vm
-```
-
-Alternatively, push your changes to the `dev` branch, and GitHub Actions will automatically deploy to the VM:
+### Production Deployment
+Production deployments are automated via GitHub Actions when changes are merged to the `main` branch.
 
 ```bash
-git checkout dev
-git add .
-git commit -m "Your commit message"
-git push
-```
-
-### Deploy to Production
-
-To deploy to production, merge your changes to the `main` branch, and GitHub Actions will automatically deploy to Cloud Run:
-
-```bash
+# Merge changes to main to trigger deployment
 git checkout main
 git merge dev
-git push
+git push origin main
 ```
 
-## Application Structure
-
-- `index.js`: Main application file
-- `package.json`: Node.js dependencies
-- `Dockerfile`: Container configuration for Cloud Run
-- `.dockerignore`: Files to exclude from the container
-- `.github/workflows/`: GitHub Actions workflow files
-- `ecosystem.config.js`: PM2 configuration for process management
-
-## Process Management with PM2
-
-The application on the development VM is managed using PM2, which provides:
-
-- Automatic application restart on crashes
-- Startup on system reboot
-- Process monitoring and logs
-
-To check the status of the application on the VM:
+### Development Deployment
+Development deployments are automated via GitHub Actions when changes are pushed to the `dev` branch.
 
 ```bash
-./check-status.sh
+# Push changes to dev for testing
+git checkout dev
+git push origin dev
 ```
 
-Or SSH into the VM and run:
+## Local Development
 
+1. Clone the repository
 ```bash
-pm2 status
+git clone <repository-url>
+cd travel-agency-app
 ```
 
-## Environment Variables
+2. Install dependencies
+```bash
+npm install
+```
 
-- `PORT`: The port on which the application will listen (default: 8080)
+3. Run locally
+```bash
+npm start
+```
+
+## Health Check
+Both environments provide a health check endpoint at `/health`
+
+## Contributing
+1. Create a feature branch from `dev`
+2. Make your changes
+3. Push to `dev` for testing
+4. Create a pull request to `main` for production deployment
+
+## Access Control
+- Production: Publicly accessible via Cloud Run URL
+- Development: 
+  - Requires VPN connection
+  - IP whitelist enforced
+  - Contact DevOps team for access
+
+## Monitoring
+- Production: Google Cloud Console
+- Development: Docker logs and health endpoints
+- Both: Stackdriver logging enabled
 
 ## License
-
-This project is licensed under the MIT License.
-
-## Development Environment
-
-The development environment is set up on an e2-micro VM instance in GCP:
-- Instance name: dev-instance
-- Zone: us-central1-a
-- External IP: 35.209.157.164
-
-## Production Environment
-
-The production environment is deployed on Google Cloud Run:
-- Region: us-central1
-- Service name: travel-agency-service
-- URL: https://travel-agency-service-957176400089.us-central1.run.app
-
-## Deployment Instructions
-
-### Local Development
-
-1. Clone this repository
-2. Install dependencies: `npm install`
-3. Run the application: `npm start`
-4. Access the application at http://localhost:8080
-
-### Deploy to Cloud Run
-
-```bash
-# Deploy directly from source code
-gcloud run deploy travel-agency-service --source . --platform managed --region us-central1 --allow-unauthenticated
-```
-
-## Free Tier Usage
-
-This project is designed to stay within GCP's always-free tier:
-- 1 e2-micro VM instance (development)
-- Cloud Run with 2 million requests per month (production) 
+© 2025 Travel Agency - All rights reserved 
