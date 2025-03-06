@@ -28,19 +28,25 @@ jobs:
         run: |
           rsync -avz --exclude 'node_modules' --exclude '.git' ./ esakrissa@34.57.0.40:~/travel-agency-app/
           ssh esakrissa@34.57.0.40 "cd ~/travel-agency-app && \
+          echo 'Installing dependencies...' && \
           npm install && \
+          echo 'Installing PM2...' && \
           sudo npm install pm2 -g && \
-          pm2 stop travel-agency-app || true && \
-          pm2 delete travel-agency-app || true && \
+          echo 'Cleaning up old processes...' && \
+          pm2 delete all || true && \
           sudo pkill -f 'node index.js' || true && \
           sleep 2 && \
+          echo 'Starting application with PM2...' && \
           pm2 start ecosystem.config.js && \
           pm2 save && \
-          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u esakrissa --hp /home/esakrissa || echo 'PM2 startup already configured'"
+          pm2 startup systemd -u esakrissa --hp /home/esakrissa || true && \
+          echo 'Deployment completed.'"
       
       - name: Verify deployment
         run: |
           echo "Waiting for application to start..."
           sleep 5
-          curl -s http://34.57.0.40:8080/health || echo "Health check failed, but continuing..."
-          ssh esakrissa@34.57.0.40 "pm2 status && cat ~/travel-agency-app/app.log | tail -n 20" 
+          echo "Checking application health..."
+          curl -v http://34.57.0.40:8080/health || echo "Health check failed, but continuing..."
+          echo "Checking PM2 status..."
+          ssh esakrissa@34.57.0.40 "pm2 list && echo 'Application logs:' && tail -n 20 ~/travel-agency-app/app.log" 

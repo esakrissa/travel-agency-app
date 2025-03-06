@@ -116,8 +116,22 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.listen(port, '0.0.0.0', () => {
+const server = app.listen(port, '0.0.0.0', () => {
   console.log(`Travel Agency app listening on port ${port}`);
   console.log(`Server running at http://0.0.0.0:${port}/`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Send ready signal to PM2
+  if (process.send) {
+    process.send('ready');
+  }
+});
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('Received SIGINT. Performing graceful shutdown...');
+  server.close(() => {
+    console.log('Server closed. Exiting process...');
+    process.exit(0);
+  });
 }); 
