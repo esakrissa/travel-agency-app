@@ -29,4 +29,5 @@ jobs:
             --image gcr.io/travel-agency-448103/travel-agency-app:${{ github.sha }} \
             --platform managed \
             --region us-central1 \
-            --allow-unauthenticated 
+            --allow-unauthenticated \
+            --set-env-vars NODE_ENV=production 
