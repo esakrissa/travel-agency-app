@@ -22,16 +22,19 @@ jobs:
 
       - name: Transfer files to VM
         run: |
-          # Create deployment directory if it doesn't exist
-          ssh esakrissa@34.57.0.40 "mkdir -p ~/travel-agency-app"
+          # Create deployment directory with sudo
+          ssh esakrissa@34.57.0.40 "sudo mkdir -p /app/travel-agency && sudo chown -R esakrissa:esakrissa /app/travel-agency"
           
-          # Transfer files
-          rsync -avz --exclude 'node_modules' --exclude '.git' ./ esakrissa@34.57.0.40:~/travel-agency-app/
+          # Transfer files including Dockerfile
+          rsync -avz --exclude 'node_modules' --exclude '.git' ./ esakrissa@34.57.0.40:/app/travel-agency/
+          
+          # Verify files were transferred
+          ssh esakrissa@34.57.0.40 "ls -la /app/travel-agency"
 
       - name: Deploy to VM with Docker
         run: |
           ssh esakrissa@34.57.0.40 "sudo bash -s" << 'ENDSSH'
-          cd ~/travel-agency-app
+          cd /app/travel-agency || exit 1
 
           # Install Docker if not installed
           if ! command -v docker &> /dev/null; then
@@ -42,14 +45,20 @@ jobs:
 
           # Stop and remove existing container if it exists
           echo "🧹 Cleaning up existing container..."
-          sudo docker stop travel-agency-dev || true
-          sudo docker rm travel-agency-dev || true
+          sudo docker stop travel-agency-dev 2>/dev/null || true
+          sudo docker rm travel-agency-dev 2>/dev/null || true
 
           # Build and run new container
           echo "🏗️ Building Docker image..."
+          if [ ! -f Dockerfile ]; then
+            echo "❌ Error: Dockerfile not found in $(pwd)"
+            ls -la
+            exit 1
+          fi
+
           sudo docker build -t travel-agency-dev \
             --build-arg NODE_ENV=development \
-            .
+            . || exit 1
 
           echo "🚀 Starting container..."
           sudo docker run -d \
@@ -57,16 +66,21 @@ jobs:
             -p 8080:8080 \
             -e NODE_ENV=development \
             --restart unless-stopped \
-            travel-agency-dev
+            travel-agency-dev || exit 1
 
-          echo "✅ Deployment completed"
+          echo "✅ Deployment completed successfully"
           ENDSSH
 
       - name: Verify deployment
         run: |
           echo "⏳ Waiting for application to start..."
-          sleep 10
+          sleep 15  # Increased wait time
+          
           echo "🏥 Checking application health..."
           curl -v http://34.57.0.40:8080/health || echo "Health check failed, but continuing..."
+          
           echo "📊 Checking Docker container status..."
-          ssh esakrissa@34.57.0.40 "sudo docker ps | grep travel-agency-dev" 
+          ssh esakrissa@34.57.0.40 "sudo docker ps -a | grep travel-agency-dev" || echo "Container status check failed"
+          
+          echo "📝 Checking Docker logs..."
+          ssh esakrissa@34.57.0.40 "sudo docker logs travel-agency-dev --tail 50" || echo "Log retrieval failed" 
