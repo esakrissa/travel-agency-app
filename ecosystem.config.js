@@ -10,6 +10,8 @@ module.exports = {
     kill_timeout: 3000,
     wait_ready: true,
     listen_timeout: 3000,
+    restart_delay: 1000,
+    max_restarts: 10,
     env: {
       NODE_ENV: "development",
       PORT: 8080
@@ -21,6 +23,7 @@ module.exports = {
     log_date_format: "YYYY-MM-DD HH:mm:ss",
     out_file: "app.log",
     error_file: "app-error.log",
-    merge_logs: true
+    merge_logs: true,
+    time: true
   }]
 }; 
